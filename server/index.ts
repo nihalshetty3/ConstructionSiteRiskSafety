@@ -3,7 +3,8 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { handleDemo } from "./routes/demo";
-import { handleSaveUpload, handleGetUploadHistory, handleGetMLImages, handleGetImagesByUploadId, upload } from "./routes/upload";
+import { handleSaveUpload, handleGetUploadHistory, handleGetMLImages, handleGetImagesByUploadId, handleGetUploadStats, upload } from "./routes/upload";
+import { handleSaveWorkerHealth, handleGetWorkerHealthHistory, handleGetWorkerHealthStats } from "./routes/workers";
 
 export function createServer() {
   const app = express();
@@ -28,10 +29,16 @@ export function createServer() {
   // Upload routes
   app.post("/api/upload", upload.array("files"), handleSaveUpload);
   app.get("/api/upload/history", handleGetUploadHistory);
+  app.get("/api/upload/stats", handleGetUploadStats);
   
   // ML model routes - get images for training/inference
   app.get("/api/ml/images", handleGetMLImages);
   app.get("/api/ml/images/:uploadId", handleGetImagesByUploadId);
+
+  // Worker health routes
+  app.post("/api/workers", handleSaveWorkerHealth);
+  app.get("/api/workers", handleGetWorkerHealthHistory);
+  app.get("/api/workers/stats", handleGetWorkerHealthStats);
 
   return app;
 }

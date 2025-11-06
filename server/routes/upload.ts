@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import { promises as fs } from "fs";
 import path from "path";
 import multer from "multer";
-import { SaveUploadResponse, UploadEntry, UploadHistoryResponse, UploadedFileData, MLImagesResponse, MLImageData } from "@shared/api";
+import { SaveUploadResponse, UploadEntry, UploadHistoryResponse, UploadedFileData, MLImagesResponse, MLImageData, UploadStatsResponse } from "@shared/api";
 
 // Use process.cwd() for reliable path resolution in both dev and production
 const DATA_DIR = path.join(process.cwd(), "server/data");
@@ -275,6 +275,29 @@ export const handleGetImagesByUploadId: RequestHandler = async (req, res) => {
       images: [],
       total: 0,
     } as MLImagesResponse);
+  }
+};
+
+// Get upload statistics
+export const handleGetUploadStats: RequestHandler = async (_req, res) => {
+  try {
+    const uploads = await readUploads();
+    
+    const totalUploads = uploads.length;
+    const totalImages = uploads.reduce((sum, upload) => sum + upload.files.length, 0);
+
+    const response: UploadStatsResponse = {
+      totalUploads,
+      totalImages,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error getting upload stats:", error);
+    res.status(500).json({
+      totalUploads: 0,
+      totalImages: 0,
+    } as UploadStatsResponse);
   }
 };
 

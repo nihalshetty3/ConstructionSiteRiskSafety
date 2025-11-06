@@ -66,3 +66,56 @@ export interface SaveUploadResponse {
   id: string;
   message: string;
 }
+
+export interface UploadStatsResponse {
+  totalUploads: number;
+  totalImages: number;
+}
+
+/**
+ * Worker Health data types
+ */
+export interface WorkerHealthEntry {
+  id: string;
+  workerName: string;
+  workerId: string; // Employee ID or unique identifier
+  date: string; // Date of health check (ISO format)
+  siteLocation: string;
+  supervisorName: string;
+  healthConditions: string[]; // Array of health conditions
+  medications?: string; // Optional medications
+  allergies?: string; // Optional allergies
+  emergencyContact?: string; // Optional emergency contact
+  emergencyPhone?: string; // Optional emergency phone
+  notes?: string; // Additional notes
+  createdAt: string; // ISO timestamp
+}
+
+export interface WorkerHealthRequest {
+  workerName: string;
+  workerId: string;
+  date: string;
+  siteLocation: string;
+  supervisorName: string;
+  healthConditions: string[];
+  medications?: string;
+  allergies?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  notes?: string;
+}
+
+export interface WorkerHealthResponse {
+  success: boolean;
+  id: string;
+  message: string;
+}
+
+export interface WorkerHealthHistoryResponse {
+  workers: WorkerHealthEntry[];
+}
+
+export interface WorkerHealthStatsResponse {
+  totalWorkers: number;
+  totalRecords: number;
+}

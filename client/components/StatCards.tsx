@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { TrendingUp, AlertTriangle, Activity, Zap } from "lucide-react";
+import { UploadStatsResponse } from "@shared/api";
 
 interface StatCard {
   label: string;
@@ -7,37 +9,6 @@ interface StatCard {
   color: "orange" | "green" | "cyan" | "red";
   trend?: string;
 }
-
-const stats: StatCard[] = [
-  {
-    label: "Total Uploads",
-    value: "1,247",
-    icon: <TrendingUp className="w-6 h-6" />,
-    color: "orange",
-    trend: "+12% this week",
-  },
-  {
-    label: "Violations Detected",
-    value: "34",
-    icon: <AlertTriangle className="w-6 h-6" />,
-    color: "red",
-    trend: "-8% from last week",
-  },
-  {
-    label: "Risk Score",
-    value: "24%",
-    icon: <Activity className="w-6 h-6" />,
-    color: "green",
-    trend: "Low risk",
-  },
-  {
-    label: "Active Sites",
-    value: "12",
-    icon: <Zap className="w-6 h-6" />,
-    color: "cyan",
-    trend: "Fully operational",
-  },
-];
 
 function getColorClasses(color: string) {
   const colorMap: Record<string, { text: string; bg: string; border: string }> = {
@@ -66,6 +37,62 @@ function getColorClasses(color: string) {
 }
 
 export function StatCards() {
+  const [totalUploads, setTotalUploads] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUploadStats = async () => {
+      try {
+        const response = await fetch("/api/upload/stats");
+        const data: UploadStatsResponse = await response.json();
+        setTotalUploads(data.totalUploads);
+      } catch (error) {
+        console.error("Error fetching upload stats:", error);
+        setTotalUploads(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUploadStats();
+  }, []);
+
+  // Format number with commas
+  const formatNumber = (num: number): string => {
+    return num.toLocaleString();
+  };
+
+  const stats: StatCard[] = [
+    {
+      label: "Total Uploads",
+      value: isLoading ? "..." : formatNumber(totalUploads),
+      icon: <TrendingUp className="w-6 h-6" />,
+      color: "orange",
+      trend: totalUploads > 0 ? "Active uploads" : "No uploads yet",
+    },
+    {
+      label: "Violations Detected",
+      value: "34",
+      icon: <AlertTriangle className="w-6 h-6" />,
+      color: "red",
+      trend: "-8% from last week",
+    },
+    {
+      label: "Risk Score",
+      value: "24%",
+      icon: <Activity className="w-6 h-6" />,
+      color: "green",
+      trend: "Low risk",
+    },
+    {
+      label: "Active Sites",
+      value: "12",
+      icon: <Zap className="w-6 h-6" />,
+      color: "cyan",
+      trend: "Fully operational",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
       {stats.map((stat, index) => {

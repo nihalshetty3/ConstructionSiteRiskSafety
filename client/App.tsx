@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Alerts from "./pages/Alerts";
 import Uploads from "./pages/Uploads";
+import Workers from "./pages/Workers";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/" element={<Index />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/uploads" element={<Uploads />} />
+            <Route path="/workers" element={<Workers />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
