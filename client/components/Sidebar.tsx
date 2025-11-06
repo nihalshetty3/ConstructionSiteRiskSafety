@@ -30,11 +30,21 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const location = useLocation();
   const pathname = location.pathname;
+  const [isMenuOpen, setIsMenuOpen] = useState(true);
+
+  const toggleMenu = () => setIsMenuOpen((v) => !v);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 bg-black border-r border-white border-opacity-10 flex flex-col items-center lg:items-start px-4 lg:px-6 py-8 z-50">
-      {/* Logo */}
-      <div className="mb-12 flex items-center gap-3 w-full">
+    <aside className={`fixed left-0 top-0 h-screen ${isMenuOpen ? 'w-20 lg:w-64' : 'w-20 lg:w-20'} bg-black border-r border-white border-opacity-10 flex flex-col items-center lg:items-start px-4 lg:px-6 py-8 z-50 transition-all duration-300`}> 
+      {/* Logo (click header to toggle sidebar) */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={toggleMenu}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleMenu(); }}
+        className="mb-12 flex items-center gap-3 w-full cursor-pointer hover:opacity-90 transition-opacity"
+        aria-expanded={isMenuOpen}
+      >
         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-neon-orange to-neon-orange flex items-center justify-center glow-neon-orange">
           <svg
             className="w-6 h-6 text-black"
@@ -44,7 +54,7 @@ export function Sidebar() {
             <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 7h2v6H9V7zm0 8h2v2H9v-2z" />
           </svg>
         </div>
-        <div className="hidden lg:block">
+        <div className={isMenuOpen ? 'hidden lg:block' : 'hidden'}>
           <h1 className="text-lg font-bold text-white">SiteGuard</h1>
           <p className="text-xs text-gray-400">AI Safety</p>
         </div>

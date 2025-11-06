@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 export function HeroSection() {
+  const navigate = useNavigate();
+
   return (
     <div className="mb-12 animate-fade-in">
       <div className="relative rounded-2xl overflow-hidden glass-card p-8 lg:p-12">
@@ -20,7 +24,7 @@ export function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Upload Site Data Button */}
-            <button className="relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange group overflow-hidden">
+            <button onClick={() => navigate('/uploads')} className="relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange group overflow-hidden">
               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 <svg
