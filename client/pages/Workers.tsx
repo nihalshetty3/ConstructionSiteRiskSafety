@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Phone,
   UserCircle,
+  Clock,
 } from "lucide-react";
 import {
   WorkerHealthRequest,
@@ -22,6 +23,7 @@ import {
   WorkerHealthEntry,
   WorkerHealthHistoryResponse,
 } from "@shared/api";
+import { computeRiskScore } from "@/lib/riskEvaluator.js";
 
 const COMMON_HEALTH_CONDITIONS = [
   "High Blood Pressure",
@@ -39,6 +41,8 @@ const COMMON_HEALTH_CONDITIONS = [
 export default function Workers() {
   const [workerName, setWorkerName] = useState("");
   const [workerId, setWorkerId] = useState("");
+  const [age, setAge] = useState<number | "">("");
+  const [totalHoursWorked, setTotalHoursWorked] = useState<number | "">("");
   const [date, setDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -63,10 +67,14 @@ export default function Workers() {
     setIsLoading(true);
     try {
       const response = await fetch("/api/workers");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch workers: ${response.statusText}`);
+      }
       const data: WorkerHealthHistoryResponse = await response.json();
-      setWorkers(data.workers);
+      setWorkers(data.workers || []);
     } catch (error) {
       console.error("Error fetching workers:", error);
+      setWorkers([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -107,10 +115,10 @@ export default function Workers() {
       e.preventDefault();
 
       // Validate required fields
-      if (!workerName || !workerId || !siteLocation || !supervisorName) {
+      if (!workerName || !workerId || !age || totalHoursWorked === "" || !siteLocation || !supervisorName) {
         setSubmitStatus({
           type: "error",
-          message: "Please fill in all required fields (Worker Name, Worker ID, Site Location, Supervisor Name)",
+          message: "Please fill in all required fields (Worker Name, Worker ID, Age, Total Hours Worked, Site Location, Supervisor Name)",
         });
         return;
       }
@@ -127,9 +135,12 @@ export default function Workers() {
       setSubmitStatus(null);
 
       try {
+        // Step 1: Prepare worker data
         const workerData: WorkerHealthRequest = {
           workerName,
           workerId,
+          age: Number(age),
+          totalHoursWorked: Number(totalHoursWorked),
           date,
           siteLocation,
           supervisorName,
@@ -141,6 +152,91 @@ export default function Workers() {
           notes: notes || undefined,
         };
 
+        // Step 2: Compute risk score from worker input
+        const formDataForRisk = {
+          worker_id: workerId,
+          worker_name: workerName,
+          age: Number(age),
+          total_hours_worked: Number(totalHoursWorked),
+          health_conditions: selectedConditions,
+          medications: medications || "",
+        };
+
+        console.log("Computing risk score with data:", formDataForRisk);
+        const riskResult = computeRiskScore(formDataForRisk);
+        console.log("Risk score computed:", riskResult);
+
+        // Step 3: Dispatch alert event for live alert feed
+        const alertData = {
+          worker_id: workerId,
+          worker_name: workerName,
+          alert_level: riskResult.alert_level,
+          score: riskResult.score,
+          reasons: riskResult.reasons,
+          recommended_actions: riskResult.recommended_actions,
+          timestamp: new Date().toISOString(),
+        };
+
+        console.log("Dispatching alert event with data:", alertData);
+        
+        // Save alert to localStorage for cross-page persistence
+        try {
+          const existingAlerts = JSON.parse(localStorage.getItem("construction-site-alerts") || "[]");
+          const newAlert = {
+            id: `alert-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            title: alertData.alert_level === "critical" 
+              ? `Critical Risk: ${alertData.worker_name || "Worker"}`
+              : alertData.alert_level === "warning"
+              ? `Warning: ${alertData.worker_name || "Worker"}`
+              : alertData.alert_level === "watch"
+              ? `Watch: ${alertData.worker_name || "Worker"}`
+              : `Worker Check: ${alertData.worker_name || "Worker"}`,
+            description: alertData.reasons && Array.isArray(alertData.reasons) 
+              ? alertData.reasons.join(". ") 
+              : `Risk score: ${alertData.score}/100`,
+            severity: alertData.alert_level === "critical" || alertData.alert_level === "warning" ? "high" 
+              : alertData.alert_level === "watch" ? "medium" : "low",
+            time: new Date().toISOString(),
+            worker_id: alertData.worker_id,
+            worker_name: alertData.worker_name,
+            score: alertData.score,
+            reasons: alertData.reasons,
+            recommended_actions: alertData.recommended_actions,
+          };
+          const updated = [newAlert, ...existingAlerts].slice(0, 50);
+          localStorage.setItem("construction-site-alerts", JSON.stringify(updated));
+          console.log("Alert saved to localStorage");
+          
+          // Trigger storage event for cross-tab communication
+          window.dispatchEvent(new StorageEvent("storage", {
+            key: "construction-site-alerts",
+            newValue: JSON.stringify(updated),
+          }));
+        } catch (error) {
+          console.error("Error saving alert to localStorage:", error);
+        }
+        
+        // Dispatch alert event immediately - AlertFeed should be listening
+        const event = new CustomEvent("newAlert", { 
+          detail: alertData,
+          bubbles: true,
+          cancelable: true
+        });
+        
+        // Dispatch on both window and document for better compatibility
+        // Use capture phase to ensure it's caught
+        window.dispatchEvent(event);
+        document.dispatchEvent(event);
+        
+        // Also try dispatching with a small delay to ensure listeners are ready
+        setTimeout(() => {
+          window.dispatchEvent(event);
+          document.dispatchEvent(event);
+        }, 100);
+        
+        console.log("Alert event dispatched successfully on window and document");
+
+        // Step 4: Save worker data to API
         const response = await fetch("/api/workers", {
           method: "POST",
           headers: {
@@ -154,12 +250,14 @@ export default function Workers() {
         if (result.success) {
           setSubmitStatus({
             type: "success",
-            message: "Worker health record saved successfully!",
+            message: `Worker health record saved successfully! Risk Score: ${riskResult.score}/100 (${riskResult.alert_level.toUpperCase()})`,
           });
 
           // Reset form
           setWorkerName("");
           setWorkerId("");
+          setAge("");
+          setTotalHoursWorked("");
           setDate(() => {
             const today = new Date();
             return today.toISOString().split("T")[0];
@@ -200,6 +298,8 @@ export default function Workers() {
     [
       workerName,
       workerId,
+      age,
+      totalHoursWorked,
       date,
       siteLocation,
       supervisorName,
@@ -295,6 +395,40 @@ export default function Workers() {
                         value={workerId}
                         onChange={(e) => setWorkerId(e.target.value)}
                         placeholder="Enter worker ID"
+                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-neon-orange focus:ring-2 focus:ring-neon-orange/20 focus:outline-none transition-all duration-300 hover:border-white/20"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-white font-semibold mb-3 flex items-center gap-2">
+                        <UserCircle className="w-5 h-5 text-neon-orange" />
+                        Age *
+                      </label>
+                      <input
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="Enter worker age"
+                        min="18"
+                        max="100"
+                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-neon-orange focus:ring-2 focus:ring-neon-orange/20 focus:outline-none transition-all duration-300 hover:border-white/20"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-white font-semibold mb-3 flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-neon-orange" />
+                        Total Hours Worked *
+                      </label>
+                      <input
+                        type="number"
+                        value={totalHoursWorked}
+                        onChange={(e) => setTotalHoursWorked(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="Enter total hours worked"
+                        min="0"
+                        step="0.5"
                         className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-neon-orange focus:ring-2 focus:ring-neon-orange/20 focus:outline-none transition-all duration-300 hover:border-white/20"
                         required
                       />
@@ -577,6 +711,11 @@ export default function Workers() {
                             <span className="px-3 py-1 rounded-full bg-white/10 text-gray-300 text-sm">
                               ID: {worker.workerId}
                             </span>
+                            {worker.age !== undefined && worker.age !== null && (
+                              <span className="px-3 py-1 rounded-full bg-neon-orange/20 border border-neon-orange text-neon-orange text-sm">
+                                Age: {worker.age}
+                              </span>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -592,6 +731,12 @@ export default function Workers() {
                               <Calendar className="w-4 h-4" />
                               <span>{new Date(worker.date).toLocaleDateString()}</span>
                             </div>
+                            {worker.totalHoursWorked !== undefined && worker.totalHoursWorked !== null && (
+                              <div className="flex items-center gap-2 text-gray-400">
+                                <Clock className="w-4 h-4" />
+                                <span>Hours Worked: {Number(worker.totalHoursWorked).toLocaleString()}</span>
+                              </div>
+                            )}
                             {worker.emergencyContact && (
                               <div className="flex items-center gap-2 text-gray-400">
                                 <Phone className="w-4 h-4" />
@@ -603,14 +748,18 @@ export default function Workers() {
                           <div className="mb-4">
                             <p className="text-gray-400 text-sm mb-2 font-semibold">Health Conditions:</p>
                             <div className="flex flex-wrap gap-2">
-                              {worker.healthConditions.map((condition, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-3 py-1 rounded-full bg-neon-orange/20 border border-neon-orange text-neon-orange text-sm"
-                                >
-                                  {condition}
-                                </span>
-                              ))}
+                              {worker.healthConditions && Array.isArray(worker.healthConditions) && worker.healthConditions.length > 0 ? (
+                                worker.healthConditions.map((condition, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-3 py-1 rounded-full bg-neon-orange/20 border border-neon-orange text-neon-orange text-sm"
+                                  >
+                                    {condition}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-gray-500 text-sm">No health conditions recorded</span>
+                              )}
                             </div>
                           </div>
 

@@ -79,6 +79,8 @@ export interface WorkerHealthEntry {
   id: string;
   workerName: string;
   workerId: string; // Employee ID or unique identifier
+  age: number; // Age of the worker
+  totalHoursWorked: number; // Total number of hours worked
   date: string; // Date of health check (ISO format)
   siteLocation: string;
   supervisorName: string;
@@ -94,6 +96,8 @@ export interface WorkerHealthEntry {
 export interface WorkerHealthRequest {
   workerName: string;
   workerId: string;
+  age: number;
+  totalHoursWorked: number;
   date: string;
   siteLocation: string;
   supervisorName: string;

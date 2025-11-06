@@ -1,2 +1,154 @@
-[]
-
+[
+  {
+    "id": "worker-1762450855397-hsiivx",
+    "workerName": "Raj",
+    "workerId": "01",
+    "date": "2025-11-06",
+    "siteLocation": "Udupi",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "High Blood Pressure"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T17:40:55.397Z"
+  },
+  {
+    "id": "worker-1762454364699-xjm01",
+    "workerName": "Rajesh Singh",
+    "workerId": "W104",
+    "age": 47,
+    "totalHoursWorked": 11,
+    "date": "2025-11-06",
+    "siteLocation": "Udupi",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "Vision Problems",
+      "Back Problems"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T18:39:24.699Z"
+  },
+  {
+    "id": "worker-1762454617196-s8w1jl",
+    "workerName": "02",
+    "workerId": "Rajesh",
+    "age": 58,
+    "totalHoursWorked": 13,
+    "date": "2025-11-06",
+    "siteLocation": "Udupi",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "Heart Condition",
+      "Diabetes"
+    ],
+    "medications": "Insulin, blood pressure tablets",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T18:43:37.196Z"
+  },
+  {
+    "id": "worker-1762455180703-zamfll",
+    "workerName": "Ram",
+    "workerId": "03",
+    "age": 35,
+    "totalHoursWorked": 9.5,
+    "date": "2025-11-06",
+    "siteLocation": "Udupi",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "Asthma"
+    ],
+    "medications": "Inhaler (as needed)",
+    "allergies": "Dust sensitivity",
+    "emergencyContact": "Meena Patel",
+    "emergencyPhone": "9998822344",
+    "notes": "Reported mild shortness of breath after working near concrete dust zone",
+    "createdAt": "2025-11-06T18:53:00.703Z"
+  },
+  {
+    "id": "worker-1762455327867-tfd7rc",
+    "workerName": "Amit",
+    "workerId": "04",
+    "age": 50,
+    "totalHoursWorked": 12,
+    "date": "2025-11-06",
+    "siteLocation": "Mangalore",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "Heart Condition"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T18:55:27.867Z"
+  },
+  {
+    "id": "worker-1762455537807-jggcb",
+    "workerName": "Man",
+    "workerId": "5",
+    "age": 55,
+    "totalHoursWorked": 10,
+    "date": "2025-11-06",
+    "siteLocation": "Mangalore",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "Heart Condition"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T18:58:57.807Z"
+  },
+  {
+    "id": "worker-1762455600740-3qrkq",
+    "workerName": "Rohan",
+    "workerId": "6",
+    "age": 55,
+    "totalHoursWorked": 12,
+    "date": "2025-11-06",
+    "siteLocation": "Bangalore",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "High Blood Pressure"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T19:00:00.740Z"
+  },
+  {
+    "id": "worker-1762455777816-qqh6ae",
+    "workerName": "Woman",
+    "workerId": "10",
+    "age": 25,
+    "totalHoursWorked": 10,
+    "date": "2025-11-06",
+    "siteLocation": "Goa",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "None"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T19:02:57.816Z"
+  }
+]

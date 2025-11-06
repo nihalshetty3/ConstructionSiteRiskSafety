@@ -50,13 +50,15 @@ export const handleSaveWorkerHealth: RequestHandler = async (req, res) => {
     if (
       !workerData.workerName ||
       !workerData.workerId ||
+      !workerData.age ||
+      workerData.totalHoursWorked === undefined ||
       !workerData.date ||
       !workerData.siteLocation ||
       !workerData.supervisorName
     ) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: workerName, workerId, date, siteLocation, supervisorName",
+        message: "Missing required fields: workerName, workerId, age, totalHoursWorked, date, siteLocation, supervisorName",
       } as WorkerHealthResponse);
     }
 
@@ -76,6 +78,8 @@ export const handleSaveWorkerHealth: RequestHandler = async (req, res) => {
       id: `worker-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       workerName: workerData.workerName,
       workerId: workerData.workerId,
+      age: workerData.age,
+      totalHoursWorked: workerData.totalHoursWorked,
       date: workerData.date,
       siteLocation: workerData.siteLocation,
       supervisorName: workerData.supervisorName,
