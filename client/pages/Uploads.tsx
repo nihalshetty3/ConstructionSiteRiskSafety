@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { Upload, X, FileImage, Calendar, MapPin, User, Building2, FileText } from "lucide-react";
+import { Upload, X, FileImage, Calendar, MapPin, User, Building2, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { SaveUploadResponse } from "@shared/api";
 
 interface UploadedFile {
   id: string;
@@ -19,6 +20,8 @@ export default function Uploads() {
   });
   const [notes, setNotes] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = useCallback((selectedFiles: FileList | null) => {
@@ -63,18 +66,92 @@ export default function Uploads() {
     });
   }, []);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log({
-      files,
-      constructionType,
-      siteLocation,
-      supervisorName,
-      uploadDate,
-      notes,
-    });
-    // Reset form or show success message
+    
+    // Validate required fields
+    if (!constructionType || !siteLocation || !supervisorName) {
+      setSubmitStatus({
+        type: "error",
+        message: "Please fill in all required fields (Construction Type, Site Location, Supervisor Name)",
+      });
+      return;
+    }
+
+    if (files.length === 0) {
+      setSubmitStatus({
+        type: "error",
+        message: "Please upload at least one image",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("constructionType", constructionType);
+      formData.append("siteLocation", siteLocation);
+      formData.append("supervisorName", supervisorName);
+      formData.append("uploadDate", uploadDate);
+      formData.append("notes", notes);
+
+      // Append all files
+      files.forEach((file) => {
+        formData.append("files", file.file);
+      });
+
+      // Send to API
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result: SaveUploadResponse = await response.json();
+
+      if (result.success) {
+        setSubmitStatus({
+          type: "success",
+          message: "Upload saved successfully!",
+        });
+
+        // Reset form
+        setFiles([]);
+        setConstructionType("");
+        setSiteLocation("");
+        setSupervisorName("");
+        setUploadDate(() => {
+          const today = new Date();
+          return today.toISOString().split("T")[0];
+        });
+        setNotes("");
+
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSubmitStatus(null);
+        }, 5000);
+      } else {
+        setSubmitStatus({
+          type: "error",
+          message: result.message || "Failed to save upload",
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting upload:", error);
+      setSubmitStatus({
+        type: "error",
+        message: "An error occurred while saving the upload. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }, [files, constructionType, siteLocation, supervisorName, uploadDate, notes]);
 
   return (
@@ -262,16 +339,50 @@ export default function Uploads() {
               </div>
             </div>
 
+            {/* Submit Status Message */}
+            {submitStatus && (
+              <div
+                className={`glass-card-sm p-4 flex items-center gap-3 animate-fade-in ${
+                  submitStatus.type === "success"
+                    ? "border-neon-green/50 bg-neon-green/10"
+                    : "border-red-500/50 bg-red-500/10"
+                }`}
+              >
+                {submitStatus.type === "success" ? (
+                  <CheckCircle className="w-5 h-5 text-neon-green flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                )}
+                <p
+                  className={`text-sm ${
+                    submitStatus.type === "success" ? "text-neon-green" : "text-red-400"
+                  }`}
+                >
+                  {submitStatus.message}
+                </p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="flex justify-end animate-fade-in" style={{ animationDelay: "200ms" }}>
               <button
                 type="submit"
-                className="group relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange overflow-hidden"
+                disabled={isSubmitting}
+                className="group relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <span className="relative z-10 flex items-center gap-2">
-                  <Upload className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
-                  Submit Upload
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
+                      Submit Upload
+                    </>
+                  )}
                 </span>
               </button>
             </div>
