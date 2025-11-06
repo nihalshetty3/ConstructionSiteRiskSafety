@@ -202,7 +202,7 @@ export default function Uploads() {
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={handleFileInputChange}
                     className="hidden"
                   />
@@ -212,17 +212,17 @@ export default function Uploads() {
                     </div>
                     <div>
                       <p className="text-white font-medium mb-2">
-                        {isDragging ? "Drop images here" : "Drag and drop images here"}
+                        {isDragging ? "Drop images or videos here" : "Drag and drop images or videos here"}
                       </p>
                       <p className="text-gray-400 text-sm">
                         or <span className="text-neon-orange hover:text-neon-orange/80 underline">browse files</span>
                       </p>
-                      <p className="text-gray-500 text-xs mt-2">Supports multiple images (PNG, JPG, JPEG)</p>
+                      <p className="text-gray-500 text-xs mt-2">Supports multiple images and videos (PNG, JPG, JPEG, MP4, MOV)</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Image Preview Section */}
+                {/* File Preview Section (images + videos) */}
                 {files.length > 0 && (
                   <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {files.map((file) => (
@@ -230,12 +230,25 @@ export default function Uploads() {
                         key={file.id}
                         className="relative group glass-card-sm p-2 animate-slide-in"
                       >
-                        <div className="relative aspect-square rounded-lg overflow-hidden bg-white/5">
-                          <img
-                            src={file.preview}
-                            alt={file.file.name}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="relative rounded-lg overflow-hidden bg-white/5">
+                          {/* Render video player for video files, otherwise an image */}
+                          {file.file.type.startsWith("video/") ? (
+                            <div className="relative aspect-video w-full h-full bg-black">
+                              <video
+                                src={file.preview}
+                                controls
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="relative aspect-square w-full h-full">
+                              <img
+                                src={file.preview}
+                                alt={file.file.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={(e) => {

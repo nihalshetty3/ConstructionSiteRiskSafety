@@ -16,5 +16,24 @@
       }
     ],
     "createdAt": "2025-11-06T16:56:05.734Z"
+  },
+  {
+    "id": "upload-1762462267205-4czwuh",
+    "constructionType": "residential",
+    "siteLocation": "mangalore",
+    "supervisorName": "H nihal shetty",
+    "uploadDate": "2025-11-07",
+    "notes": "",
+    "files": [
+      {
+        "id": "file-1762462267232-0",
+        "name": "image63.jpg",
+        "size": 67000,
+        "type": "image/jpeg",
+        "path": "uploads/upload-1762462267205-4czwuh/image63-1762462267208-8buwq.jpg",
+        "absolutePath": "C:\\Users\\anvit\\Downloads\\sahyadhri_ai\\ConstructionSiteRiskSafety\\server\\data\\uploads\\upload-1762462267205-4czwuh\\image63-1762462267208-8buwq.jpg"
+      }
+    ],
+    "createdAt": "2025-11-06T20:51:07.232Z"
   }
 ]
