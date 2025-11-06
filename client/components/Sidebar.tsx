@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   AlertCircle,
@@ -28,7 +28,8 @@ const navItems: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const location = useLocation();
+  const pathname = location.pathname;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 bg-black border-r border-white border-opacity-10 flex flex-col items-center lg:items-start px-4 lg:px-6 py-8 z-50">
@@ -51,32 +52,33 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-4 w-full flex-1">
-        {navItems.map((item) => (
-          <Link key={item.id} to={item.path}>
-            <button
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden lg:justify-start justify-center ${
-                activeTab === item.id
-                  ? "text-white glow-neon-orange"
-                  : "text-gray-400 hover:text-gray-200"
-              }`}
-            >
-              {activeTab === item.id && (
-                <div className="absolute inset-0 bg-gradient-to-r from-neon-orange/20 to-transparent animate-glow-pulse"></div>
-              )}
-              <div
-                className={`relative z-10 transition-all duration-300 ${
-                  activeTab === item.id ? "text-neon-orange" : "group-hover:text-neon-orange"
+        {navItems.map((item) => {
+          // determine active by route. For root use exact match, otherwise startsWith
+          const isActive = item.path === "/" ? pathname === "/" : pathname.startsWith(item.path);
+          return (
+            <Link key={item.id} to={item.path} className="w-full">
+              <button
+                className={`sidebar-nav-item w-full group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden lg:justify-start justify-center ${
+                  isActive ? "text-white glow-neon-orange active" : "text-gray-400 hover:text-gray-200"
                 }`}
               >
-                {item.icon}
-              </div>
-              <span className="hidden lg:inline text-sm font-medium relative z-10">
-                {item.label}
-              </span>
-            </button>
-          </Link>
-        ))}
+                {isActive && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-neon-orange/20 to-transparent animate-glow-pulse"></div>
+                )}
+                <div
+                  className={`relative z-10 transition-all duration-300 ${
+                    isActive ? "text-neon-orange" : "group-hover:text-neon-orange"
+                  }`}
+                >
+                  {item.icon}
+                </div>
+                <span className="hidden lg:inline text-sm font-medium relative z-10">
+                  {item.label}
+                </span>
+              </button>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Footer */}
