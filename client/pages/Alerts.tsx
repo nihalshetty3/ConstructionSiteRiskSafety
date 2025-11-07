@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/Sidebar";
+import { RainyLocations } from "@/components/RainyLocations";
 import { AlertCircle } from "lucide-react";
 
 export default function Alerts() {
@@ -22,10 +23,8 @@ export default function Alerts() {
             </p>
           </div>
 
-          <div className="glass-card p-12 text-center">
-            <p className="text-gray-400 text-lg">
-              Alerts page coming soon. Continue building this section by providing more details.
-            </p>
+          <div className="space-y-8">
+            <RainyLocations hours={6} />
           </div>
         </div>
       </main>

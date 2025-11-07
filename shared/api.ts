@@ -91,6 +91,10 @@ export interface WorkerHealthEntry {
   emergencyPhone?: string; // Optional emergency phone
   notes?: string; // Additional notes
   createdAt: string; // ISO timestamp
+  riskScore?: number; // Risk evaluation score (0-100)
+  alertLevel?: "ok" | "watch" | "warning" | "critical"; // Risk alert level
+  riskReasons?: string[]; // Reasons for risk score
+  recommendedActions?: string[]; // Recommended actions based on risk
 }
 
 export interface WorkerHealthRequest {
@@ -122,4 +126,39 @@ export interface WorkerHealthHistoryResponse {
 export interface WorkerHealthStatsResponse {
   totalWorkers: number;
   totalRecords: number;
+}
+
+/**
+ * Alert data types
+ */
+export interface AlertEntry {
+  id: string;
+  workerId: string;
+  workerName: string;
+  alertLevel: "ok" | "watch" | "warning" | "critical";
+  riskScore: number;
+  riskReasons: string[];
+  recommendedActions: string[];
+  timestamp: string;
+  siteLocation: string;
+  supervisorName: string;
+}
+
+export interface AlertsResponse {
+  alerts: AlertEntry[];
+}
+
+/**
+ * Weather / Rainy sites types
+ */
+export interface RainySite {
+  siteLocation: string;
+  firstRainAt?: string; // ISO string when rain is first predicted
+  probability?: number; // POP (0-1) from forecast if available
+  rainVolumeMm?: number; // Accumulated rain volume (mm) for the forecast slot
+}
+
+export interface RainySitesResponse {
+  hours: number; // lookahead window in hours
+  locations: RainySite[]; // only locations predicted to have rain within the window
 }

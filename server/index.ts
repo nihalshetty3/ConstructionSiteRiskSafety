@@ -4,7 +4,8 @@ import cors from "cors";
 import path from "path";
 import { handleDemo } from "./routes/demo";
 import { handleSaveUpload, handleGetUploadHistory, handleGetMLImages, handleGetImagesByUploadId, handleGetUploadStats, upload } from "./routes/upload";
-import { handleSaveWorkerHealth, handleGetWorkerHealthHistory, handleGetWorkerHealthStats } from "./routes/workers";
+import { handleSaveWorkerHealth, handleGetWorkerHealthHistory, handleGetWorkerHealthStats, handleGetAlerts } from "./routes/workers";
+import { handleGetRainySites } from "./routes/weather";
 
 export function createServer() {
   const app = express();
@@ -39,6 +40,10 @@ export function createServer() {
   app.post("/api/workers", handleSaveWorkerHealth);
   app.get("/api/workers", handleGetWorkerHealthHistory);
   app.get("/api/workers/stats", handleGetWorkerHealthStats);
+  app.get("/api/workers/alerts", handleGetAlerts);
+
+  // Weather routes
+  app.get("/api/weather/rainy-sites", handleGetRainySites);
 
   return app;
 }

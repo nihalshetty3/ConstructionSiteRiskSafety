@@ -150,5 +150,32 @@
     "emergencyPhone": "",
     "notes": "",
     "createdAt": "2025-11-06T19:02:57.816Z"
+  },
+  {
+    "id": "worker-1762462538851-zf7mjc",
+    "workerName": "Tim",
+    "workerId": "15",
+    "age": 20,
+    "totalHoursWorked": 8,
+    "date": "2025-11-06",
+    "siteLocation": "Delhi",
+    "supervisorName": "Dhruva",
+    "healthConditions": [
+      "None"
+    ],
+    "medications": "",
+    "allergies": "",
+    "emergencyContact": "",
+    "emergencyPhone": "",
+    "notes": "",
+    "createdAt": "2025-11-06T20:55:38.851Z",
+    "riskScore": 0,
+    "alertLevel": "ok",
+    "riskReasons": [
+      "No health conditions - 1.0x multiplier"
+    ],
+    "recommendedActions": [
+      "Maintain hydration and standard rest schedule."
+    ]
   }
 ]

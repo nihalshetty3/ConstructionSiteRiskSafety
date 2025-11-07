@@ -152,12 +152,53 @@ function saveAlertsToStorage(alerts: Alert[]) {
 }
 
 export function AlertFeed() {
-  const [alerts, setAlerts] = useState<Alert[]>(() => {
-    // Load alerts from localStorage on mount
-    const stored = loadAlertsFromStorage();
-    console.log("AlertFeed: Loaded", stored.length, "alerts from storage");
-    return stored;
-  });
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch alerts from server on mount
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  const fetchAlerts = async () => {
+    try {
+      const response = await fetch('/api/workers/alerts');
+      const data = await response.json();
+      
+      if (data.alerts && Array.isArray(data.alerts)) {
+        // Convert server alerts to local Alert format
+        const serverAlerts: Alert[] = data.alerts.map((alertData: any) => ({
+          id: alertData.id,
+          title: alertData.alertLevel === "critical" 
+            ? `Critical Risk: ${alertData.workerName}`
+            : alertData.alertLevel === "warning"
+            ? `Warning: ${alertData.workerName}`
+            : alertData.alertLevel === "watch"
+            ? `Watch: ${alertData.workerName}`
+            : `Worker Check: ${alertData.workerName}`,
+          description: alertData.riskReasons && Array.isArray(alertData.riskReasons) 
+            ? alertData.riskReasons.join(". ") 
+            : `Risk score: ${alertData.riskScore}/100`,
+          severity: mapAlertLevelToSeverity(alertData.alertLevel),
+          time: formatTimeAgo(alertData.timestamp),
+          worker_id: alertData.workerId,
+          worker_name: alertData.workerName,
+          score: alertData.riskScore,
+          reasons: alertData.riskReasons,
+          recommended_actions: alertData.recommendedActions,
+        }));
+        
+        setAlerts(serverAlerts);
+      }
+    } catch (error) {
+      console.error("Error fetching alerts from server:", error);
+      // Fallback to localStorage
+      const stored = loadAlertsFromStorage();
+      setAlerts(stored);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Listen for new alert events
@@ -228,7 +269,11 @@ export function AlertFeed() {
       </div>
 
       <div className="space-y-3 max-h-96 overflow-y-auto">
-        {alerts.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-8 text-gray-400">
+            <p>Loading alerts...</p>
+          </div>
+        ) : alerts.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <p>No alerts yet. Alerts will appear here when workers are registered.</p>
           </div>

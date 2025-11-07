@@ -236,13 +236,21 @@ export default function Workers() {
         
         console.log("Alert event dispatched successfully on window and document");
 
-        // Step 4: Save worker data to API
+        // Step 4: Save worker data to API (including risk evaluation)
+        const workerDataWithRisk = {
+          ...workerData,
+          riskScore: riskResult.score,
+          alertLevel: riskResult.alert_level,
+          riskReasons: riskResult.reasons,
+          recommendedActions: riskResult.recommended_actions,
+        };
+
         const response = await fetch("/api/workers", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(workerData),
+          body: JSON.stringify(workerDataWithRisk),
         });
 
         const result: WorkerHealthResponse = await response.json();

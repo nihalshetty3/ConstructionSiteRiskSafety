@@ -7,6 +7,8 @@ import {
   WorkerHealthEntry,
   WorkerHealthHistoryResponse,
   WorkerHealthStatsResponse,
+  AlertEntry,
+  AlertsResponse,
 } from "@shared/api";
 
 // Use process.cwd() for reliable path resolution in both dev and production
@@ -44,7 +46,12 @@ async function writeWorkers(workers: WorkerHealthEntry[]): Promise<void> {
 // Save worker health data
 export const handleSaveWorkerHealth: RequestHandler = async (req, res) => {
   try {
-    const workerData: WorkerHealthRequest = req.body;
+    const workerData: WorkerHealthRequest & {
+      riskScore?: number;
+      alertLevel?: "ok" | "watch" | "warning" | "critical";
+      riskReasons?: string[];
+      recommendedActions?: string[];
+    } = req.body;
 
     // Validate required fields
     if (
@@ -90,6 +97,11 @@ export const handleSaveWorkerHealth: RequestHandler = async (req, res) => {
       emergencyPhone: workerData.emergencyPhone || "",
       notes: workerData.notes || "",
       createdAt: new Date().toISOString(),
+      // Add risk evaluation data
+      riskScore: (workerData as any).riskScore,
+      alertLevel: (workerData as any).alertLevel,
+      riskReasons: (workerData as any).riskReasons,
+      recommendedActions: (workerData as any).recommendedActions,
     };
 
     // Add to workers array
@@ -157,6 +169,41 @@ export const handleGetWorkerHealthStats: RequestHandler = async (_req, res) => {
       totalWorkers: 0,
       totalRecords: 0,
     } as WorkerHealthStatsResponse);
+  }
+};
+
+// Get alerts with risk scores
+export const handleGetAlerts: RequestHandler = async (_req, res) => {
+  try {
+    const workers = await readWorkers();
+
+    // Filter workers with risk evaluation data and convert to alerts
+    const alerts: AlertEntry[] = workers
+      .filter(worker => worker.riskScore !== undefined && worker.alertLevel !== undefined)
+      .map(worker => ({
+        id: `alert-${worker.id}`,
+        workerId: worker.workerId,
+        workerName: worker.workerName,
+        alertLevel: worker.alertLevel!,
+        riskScore: worker.riskScore!,
+        riskReasons: worker.riskReasons || [],
+        recommendedActions: worker.recommendedActions || [],
+        timestamp: worker.createdAt,
+        siteLocation: worker.siteLocation,
+        supervisorName: worker.supervisorName,
+      }))
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Newest first
+
+    const response: AlertsResponse = {
+      alerts,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error getting alerts:", error);
+    res.status(500).json({
+      alerts: [],
+    } as AlertsResponse);
   }
 };
 
