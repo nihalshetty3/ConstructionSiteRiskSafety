@@ -24,7 +24,7 @@ export function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Upload Site Data Button */}
-            <button className="relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange group overflow-hidden">
+            <button onClick={() => navigate('/uploads')} className="relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange group overflow-hidden">
               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 <svg
@@ -47,14 +47,15 @@ export function HeroSection() {
             {/* Start Live Analysis Button */}
             <button
               onClick={() => navigate('/camera')}
-              className="relative px-8 py-4 rounded-lg font-semibold text-white bg-gradient-to-r from-neon-cyan to-neon-green hover:from-neon-cyan hover:to-neon-green transition-all duration-300 glow-neon-cyan group overflow-hidden"
+                className="relative px-8 py-4 rounded-lg font-semibold text-white bg-[#00BCD4] hover:bg-[#00a0b8] border-2 border-[#00BCD4] hover:border-[#00a0b8] transition-all duration-300 group overflow-hidden glow-neon-cyan hover:scale-105 pulsate-glow"
+              style={{ boxShadow: '0 10px 30px rgba(0,188,212,0.16)' }}
             >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity" style={{ background: 'radial-gradient(circle at 20% 10%, rgba(0,188,212,0.10), transparent 30%)' }}></div>
               <span className="relative z-10 flex items-center gap-2">Start Live Analysis</span>
             </button>
 
             {/* View Alerts Button */}
-            <button className="relative px-8 py-4 rounded-lg font-semibold text-white border-2 border-neon-cyan hover:border-neon-orange bg-transparent hover:bg-neon-orange/10 transition-all duration-300 glow-neon-cyan hover:glow-neon-orange group overflow-hidden">
+            <button onClick={() => navigate('/alerts')} className="relative px-8 py-4 rounded-lg font-semibold text-white border-2 border-neon-cyan hover:border-neon-orange bg-transparent hover:bg-neon-orange/10 transition-all duration-300 glow-neon-cyan hover:glow-neon-orange group overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-neon-cyan/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 <svg
