@@ -10,12 +10,23 @@ export default function CameraAccessButton(): JSX.Element {
   const navigate = useNavigate();
 
   const closeCamera = () => {
-    // navigate back to home (or previous page)
+    // stop ML webcam if running and navigate back to home
+    fetch("/api/ml/stop-webcam", { method: "POST" }).catch(() => {});
     navigate("/");
   };
 
   const captureAndAnalyze = useCallback(async () => {
-    // placeholder for future implementation
+    try {
+      setIsLoading(true);
+      // Start the backend Python webcam ML process
+      const resp = await fetch("/api/ml/start-webcam");
+      const data = await resp.json();
+      setAnalysisResult(data?.message || "Webcam ML started");
+    } catch (err) {
+      setAnalysisResult(String(err));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   return (

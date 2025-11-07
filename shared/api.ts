@@ -162,3 +162,20 @@ export interface RainySitesResponse {
   hours: number; // lookahead window in hours
   locations: RainySite[]; // only locations predicted to have rain within the window
 }
+
+/**
+ * ML Webcam alert types
+ */
+export interface MlAlertEntry {
+  id: string;
+  timestamp: string; // ISO
+  classes: string[]; // detected unsafe classes, e.g., ["no_helmet", "no_mask"]
+  primary?: string; // primary unsafe class
+  siteLocation?: string; // e.g., "Live Webcam"
+  level?: "watch" | "warning" | "critical";
+  message?: string;
+}
+
+export interface MlAlertsResponse {
+  alerts: MlAlertEntry[];
+}

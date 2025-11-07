@@ -4,6 +4,7 @@ import { StatCards } from "@/components/StatCards";
 import { AlertFeed } from "@/components/AlertFeed";
 import { DailyViolationsChart } from "@/components/DailyViolationsChart";
 import { PPEComplianceChart } from "@/components/PPEComplianceChart";
+import MLAlertFeed from "@/components/MLAlertFeed";
 
 export default function Index() {
   return (
@@ -41,6 +42,11 @@ export default function Index() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
             <DailyViolationsChart />
             <PPEComplianceChart />
+          </div>
+
+          {/* ML Alert Feed */}
+          <div className="mt-8 mb-6">
+            <MLAlertFeed />
           </div>
 
           {/* Alert Feed */}

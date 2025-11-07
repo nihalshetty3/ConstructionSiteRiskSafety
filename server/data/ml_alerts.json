@@ -1,0 +1,91 @@
+[
+  {
+    "id": "1762511047942-no_goggles",
+    "timestamp": "2025-11-07T10:24:07Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  },
+  {
+    "id": "1762511086653-no_goggles",
+    "timestamp": "2025-11-07T10:24:46Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  },
+  {
+    "id": "1762511107534-no_goggles",
+    "timestamp": "2025-11-07T10:25:07Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  },
+  {
+    "id": "1762511115217-no_goggles",
+    "timestamp": "2025-11-07T10:25:15Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  },
+  {
+    "id": "1762511157259-no_goggles",
+    "timestamp": "2025-11-07T10:25:57Z",
+    "classes": [
+      "no_glove",
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_glove, no_goggles"
+  },
+  {
+    "id": "1762511159395-no_goggles",
+    "timestamp": "2025-11-07T10:25:59Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  },
+  {
+    "id": "1762511161518-no_goggles",
+    "timestamp": "2025-11-07T10:26:01Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  },
+  {
+    "id": "1762511163682-no_goggles",
+    "timestamp": "2025-11-07T10:26:03Z",
+    "classes": [
+      "no_goggles"
+    ],
+    "primary": "no_goggles",
+    "siteLocation": "Live Webcam",
+    "level": "warning",
+    "message": "Unsafe detected: no_goggles"
+  }
+]

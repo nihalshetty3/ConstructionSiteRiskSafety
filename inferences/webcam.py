@@ -3,6 +3,7 @@ import time
 import argparse
 import subprocess
 import sys
+import json
 from pathlib import Path
 from ultralytics import YOLO
 
@@ -96,7 +97,16 @@ def main():
     alarm_enabled = True
     base_conf = args.conf
     prev_t, fps = time.time(), 0.0
-    last_alert = {}  # class_name -> last_time
+    last_alert = {}  # class_name -> last_time (beep cooldown)
+    last_event = {}  # class_name -> last_time (JSON log cooldown)
+
+    # Prepare ML alerts JSON path (server/data/ml_alerts.json)
+    alerts_path = Path(__file__).resolve().parents[1] / "server" / "data" / "ml_alerts.json"
+    try:
+        if not alerts_path.exists():
+            alerts_path.write_text("[]", encoding="utf-8")
+    except Exception as e:
+        print(f"[WARN] Cannot prepare alerts file: {e}")
 
     print("[INFO] Starting webcam loop… Press 'q' to quit.")
 
@@ -152,6 +162,31 @@ def main():
                         if now - last >= ALERT_COOLDOWN_SEC:
                             play_beep()
                             last_alert[cls_name] = now
+                            # Also rate-limited JSON alert logging
+                            try:
+                                evt_last = last_event.get(cls_name, 0)
+                                if now - evt_last >= ALERT_COOLDOWN_SEC:
+                                    # Append an alert event
+                                    payload = {
+                                        "id": f"{int(now*1000)}-{cls_name}",
+                                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now)),
+                                        "classes": sorted(list(unsafe_labels_on_frame)),
+                                        "primary": cls_name,
+                                        "siteLocation": "Live Webcam",
+                                        "level": "warning" if cls_name.startswith("no_") else "watch",
+                                        "message": f"Unsafe detected: {', '.join(sorted(unsafe_labels_on_frame))}",
+                                    }
+                                    try:
+                                        data = json.loads(alerts_path.read_text(encoding="utf-8"))
+                                        if not isinstance(data, list):
+                                            data = []
+                                    except Exception:
+                                        data = []
+                                    data.append(payload)
+                                    alerts_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+                                    last_event[cls_name] = now
+                            except Exception as e:
+                                print(f"[WARN] Failed to log alert: {e}")
 
         # HUD (top-left)
         now = time.time()
