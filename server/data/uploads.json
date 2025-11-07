@@ -73,5 +73,24 @@
       }
     ],
     "createdAt": "2025-11-06T23:12:25.820Z"
+  },
+  {
+    "id": "upload-1762483292869-ehblmm",
+    "constructionType": "residential",
+    "siteLocation": "mangalore",
+    "supervisorName": "Suresh",
+    "uploadDate": "2025-11-07",
+    "notes": "Site construction damage",
+    "files": [
+      {
+        "id": "file-1762483292885-0",
+        "name": "tsunami.webp",
+        "size": 97230,
+        "type": "image/webp",
+        "path": "uploads/upload-1762483292869-ehblmm/tsunami-1762483292870-wknmey.webp",
+        "absolutePath": "/Users/hnihalshetty/Desktop/SahyHack/ConstructionSiteRiskSafety/server/data/uploads/upload-1762483292869-ehblmm/tsunami-1762483292870-wknmey.webp"
+      }
+    ],
+    "createdAt": "2025-11-07T02:41:32.885Z"
   }
 ]
