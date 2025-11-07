@@ -3,10 +3,19 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { handleDemo } from "./routes/demo";
-import { handleSaveUpload, handleGetUploadHistory, handleGetMLImages, handleGetImagesByUploadId, handleGetUploadStats, upload } from "./routes/upload";
+import {
+  handleGetUploadHistory,
+  handleGetMLImages,
+  handleGetImagesByUploadId,
+  handleSaveUpload,
+  handleGetUploadStats,
+  handleGetUploadAlerts,
+  upload
+} from "./routes/upload";
 import { handleSaveWorkerHealth, handleGetWorkerHealthHistory, handleGetWorkerHealthStats, handleGetAlerts } from "./routes/workers";
 import { handleGetRainySites } from "./routes/weather";
 import { handleStartWebcam, handleStopWebcam, handleGetMlAlerts } from "./routes/ml";
+
 
 export function createServer() {
   const app = express();
@@ -32,7 +41,9 @@ export function createServer() {
   app.post("/api/upload", upload.array("files"), handleSaveUpload);
   app.get("/api/upload/history", handleGetUploadHistory);
   app.get("/api/upload/stats", handleGetUploadStats);
-  
+   app.post("/api/upload", upload.array("files"), handleSaveUpload);
+  app.get("/api/uploads/alerts", handleGetUploadAlerts);
+
   // ML model routes - get images for training/inference
   app.get("/api/ml/images", handleGetMLImages);
   app.get("/api/ml/images/:uploadId", handleGetImagesByUploadId);

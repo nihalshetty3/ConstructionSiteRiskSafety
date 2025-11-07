@@ -1,22 +1,44 @@
+// --- Imports ---
 import { RequestHandler } from "express";
 import { promises as fs } from "fs";
 import path from "path";
 import multer from "multer";
-import { SaveUploadResponse, UploadEntry, UploadHistoryResponse, UploadedFileData, MLImagesResponse, MLImageData, UploadStatsResponse } from "@shared/api";
+import {
+  SaveUploadResponse,
+  UploadEntry,
+  UploadedFileData,
+  UploadHistoryResponse,
+  MLImagesResponse,
+  MLImageData,
+  UploadStatsResponse,
+} from "@shared/api";
 
-// Use process.cwd() for reliable path resolution in both dev and production
+import fetch from "node-fetch";
+import FormData from "form-data";
+import { createReadStream } from "fs";
+
+// --- ML Server Configuration ---
+const ML_API_URL = "http://127.0.0.1:8000/predict";
+const ALERT_CLASSES = new Set(["no_helmet", "no_vest", "no_glove", "no_mask", "no_shoes"]);
+
+// --- Paths / Data storage ---
 const DATA_DIR = path.join(process.cwd(), "server/data");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const UPLOADS_FILE = path.join(DATA_DIR, "uploads.json");
 
-// Configure multer for file storage - organize by upload ID
+// --- Extended Upload Type (adds mlResults) ---
+type UploadEntryWithML = UploadEntry & {
+  mlResults?: MLResponse[];
+};
+
+// --- Multer ---
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     await ensureUploadsDirectory();
-    // Create a subdirectory for this upload batch (using timestamp)
-    // Only create uploadId once per request (first file)
     if (!(req as any).uploadId) {
-      (req as any).uploadId = `upload-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      (req as any).uploadId = `upload-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}`;
     }
     const uploadId = (req as any).uploadId;
     const uploadDir = path.join(UPLOADS_DIR, uploadId);
@@ -24,119 +46,160 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Keep original filename for easier identification
     const ext = path.extname(file.originalname);
     const name = path.basename(file.originalname, ext);
-    // Sanitize filename
-    const sanitizedName = name.replace(/[^a-zA-Z0-9-_]/g, '_');
-    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    cb(null, `${sanitizedName}-${uniqueSuffix}${ext}`);
-  },
+    const sanitized = name.replace(/[^a-zA-Z0-9-_]/g, "_");
+    cb(null, `${sanitized}-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`);
+  }
 });
 
 const upload = multer({
   storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB per file
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    // Only allow images
-    if (file.mimetype.startsWith("image/")) {
+    if (file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/")) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      cb(new Error("Only image/video allowed"));
     }
-  },
+  }
 });
 
-// Ensure data directory exists
-async function ensureDataDirectory(): Promise<void> {
+// --- FS Helpers ---
+async function ensureDataDirectory() {
   try {
     await fs.access(DATA_DIR);
   } catch {
-    // Directory doesn't exist, create it
     await fs.mkdir(DATA_DIR, { recursive: true });
   }
 }
 
-// Ensure uploads directory exists
-async function ensureUploadsDirectory(): Promise<void> {
+async function ensureUploadsDirectory() {
   try {
     await fs.access(UPLOADS_DIR);
   } catch {
-    // Directory doesn't exist, create it
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
   }
 }
 
-// Helper function to read uploads from JSON file
-async function readUploads(): Promise<UploadEntry[]> {
+// ✅ SAFE READ
+async function readUploads(): Promise<UploadEntryWithML[]> {
   try {
     await ensureDataDirectory();
-    const data = await fs.readFile(UPLOADS_FILE, "utf-8");
-    return JSON.parse(data);
-  } catch (error) {
-    // If file doesn't exist or is empty, return empty array
+
+    try {
+      await fs.access(UPLOADS_FILE);
+    } catch {
+      await fs.writeFile(UPLOADS_FILE, "[]", "utf-8");
+      return [];
+    }
+
+    const raw = await fs.readFile(UPLOADS_FILE, "utf-8");
+    if (!raw.trim()) return [];
+
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
     return [];
   }
 }
 
-// Helper function to write uploads to JSON file
-async function writeUploads(uploads: UploadEntry[]): Promise<void> {
+// ✅ SAFE WRITE
+async function writeUploads(uploads: UploadEntryWithML[]) {
   await ensureDataDirectory();
   await fs.writeFile(UPLOADS_FILE, JSON.stringify(uploads, null, 2), "utf-8");
 }
 
-// Save upload data
+// --- ML Response Type ---
+interface MLDetection {
+  class_id: number;
+  class_name: string;
+  confidence: number;
+  box_xyxy: [number, number, number, number];
+}
+
+interface MLResponse {
+  time_ms: number;
+  count: number;
+  detections: MLDetection[];
+  filename?: string;
+}
+
+// --- Run ML Prediction ---
+async function runPrediction(filePath: string, fileType: string, originalName: string): Promise<MLResponse | null> {
+  if (!fileType.startsWith("image/")) return null;
+
+  try {
+    const form = new FormData();
+    form.append("file", createReadStream(filePath));
+
+    const res = await fetch(ML_API_URL, {
+      method: "POST",
+      body: form,
+      headers: form.getHeaders()
+    });
+
+    if (!res.ok) {
+      console.error(`ML error: ${res.status} ${res.statusText}`);
+      return null;
+    }
+
+    const json = (await res.json()) as MLResponse;
+    json.filename = originalName;
+    return json;
+
+  } catch (err) {
+    console.error("Prediction error:", err);
+    return null;
+  }
+}
+
+// --- SAVE UPLOAD ---
 export const handleSaveUpload: RequestHandler = async (req, res) => {
   try {
-    // Extract form fields
-    const constructionType = req.body.constructionType;
-    const siteLocation = req.body.siteLocation;
-    const supervisorName = req.body.supervisorName;
-    const uploadDate = req.body.uploadDate;
-    const notes = req.body.notes || "";
+    const { constructionType, siteLocation, supervisorName, uploadDate, notes = "" } = req.body;
 
-    // Validate required fields
     if (!constructionType || !siteLocation || !supervisorName) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields: constructionType, siteLocation, supervisorName",
-      } as SaveUploadResponse);
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    // Get uploaded files
     const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No files uploaded",
-      } as SaveUploadResponse);
+    if (!files?.length) {
+      return res.status(400).json({ success: false, message: "No files uploaded" });
     }
 
-    // Read existing uploads
     const uploads = await readUploads();
+    const uploadId = (req as any).uploadId || `upload-${Date.now()}`;
 
-    // Get upload ID from request (set by multer destination)
-    const uploadId = (req as any).uploadId || `upload-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-    // Create file data entries with both relative and absolute paths
     const fileData: UploadedFileData[] = files.map((file, index) => {
       const relativePath = `uploads/${uploadId}/${file.filename}`;
-      const absolutePath = path.join(UPLOADS_DIR, uploadId, file.filename);
-      
       return {
-        id: `file-${Date.now()}-${index}`,
+        id: `file-${uploadId}-${index}`,
         name: file.originalname,
         size: file.size,
         type: file.mimetype,
-        path: relativePath, // Relative path for serving via API
-        absolutePath: absolutePath, // Absolute path for ML model access
+        path: relativePath,
+        absolutePath: path.join(UPLOADS_DIR, uploadId, file.filename)
       };
     });
 
-    // Create new upload entry
-    const newUpload: UploadEntry = {
+    console.log(`Running ML on ${fileData.length} files`);
+
+    const mlResultsRaw = await Promise.all(
+      fileData.map(f => runPrediction(f.absolutePath, f.type, f.name))
+    );
+
+    const mlResults = mlResultsRaw.filter(r => r !== null) as MLResponse[];
+
+    const hasViolations = mlResults.some(r =>
+      r.detections.some(d => ALERT_CLASSES.has(d.class_name))
+    );
+
+    if (hasViolations) {
+      console.log(`⚠️ SAFETY VIOLATION DETECTED in upload: ${uploadId}`);
+    }
+
+    const newUpload: UploadEntryWithML = {
       id: uploadId,
       constructionType,
       siteLocation,
@@ -145,59 +208,112 @@ export const handleSaveUpload: RequestHandler = async (req, res) => {
       notes,
       files: fileData,
       createdAt: new Date().toISOString(),
+      mlResults
     };
 
-    // Add to uploads array
     uploads.push(newUpload);
-
-    // Write back to file
     await writeUploads(uploads);
 
     const response: SaveUploadResponse = {
       success: true,
       id: newUpload.id,
-      message: "Upload saved successfully",
+      message: "Upload saved successfully"
     };
 
     res.status(200).json(response);
-  } catch (error) {
-    console.error("Error saving upload:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to save upload",
-    } as SaveUploadResponse);
+
+  } catch (err) {
+    console.error("Error saving upload:", err);
+    res.status(500).json({ success: false, message: "Failed to save upload" });
   }
 };
 
-// Get upload history
+// --- ALERT FEED ---
+export const handleGetUploadAlerts: RequestHandler = async (_req, res) => {
+  try {
+    const uploads = await readUploads();
+    const alerts: any[] = [];
+
+    for (const upload of uploads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())) {
+      if (!upload.mlResults) continue;
+
+      let fileCount = 0;
+      let violations: string[] = [];
+
+      for (const r of upload.mlResults) {
+        if (r?.detections) {
+          fileCount++;
+          const bad = r.detections.filter(d => ALERT_CLASSES.has(d.class_name));
+          if (bad.length) {
+            violations.push(
+              `File '${r.filename}' → ${[...new Set(bad.map(x => x.class_name))].join(", ")}`
+            );
+          }
+        }
+      }
+
+      alerts.push({
+        id: `ppe-${upload.id}`,
+        title: violations.length ? "Safety Violation" : "All Clear",
+        description: violations.length
+          ? violations.join(" | ")
+          : `Checked ${fileCount} image(s). All PPE OK.`,
+        severity: violations.length ? "high" : "low",
+        time: upload.createdAt,
+        location: upload.siteLocation
+      });
+    }
+
+    res.status(200).json({ alerts });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ alerts: [] });
+  }
+};
+
+// --- Additional read endpoints ---
 export const handleGetUploadHistory: RequestHandler = async (_req, res) => {
   try {
     const uploads = await readUploads();
+    // strip mlResults when returning history to match UploadEntry shape
+    const simpleUploads: UploadEntry[] = uploads.map(u => ({
+      id: u.id,
+      constructionType: u.constructionType,
+      siteLocation: u.siteLocation,
+      supervisorName: u.supervisorName,
+      uploadDate: u.uploadDate,
+      notes: u.notes,
+      files: u.files,
+      createdAt: u.createdAt,
+    }));
 
-    // Sort by createdAt descending (newest first)
-    uploads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    const response: UploadHistoryResponse = {
-      uploads,
-    };
-
+    const response: UploadHistoryResponse = { uploads: simpleUploads };
     res.status(200).json(response);
-  } catch (error) {
-    console.error("Error reading upload history:", error);
-    res.status(500).json({
-      uploads: [],
-    } as UploadHistoryResponse);
+  } catch (err) {
+    console.error("Error getting upload history:", err);
+    res.status(500).json({ uploads: [] } as UploadHistoryResponse);
   }
 };
 
-// Get all images with metadata for ML training/inference
+export const handleGetUploadStats: RequestHandler = async (_req, res) => {
+  try {
+    const uploads = await readUploads();
+    const totalUploads = uploads.length;
+    const totalImages = uploads.reduce((sum, u) => sum + (u.files?.length || 0), 0);
+    const response: UploadStatsResponse = { totalUploads, totalImages };
+    res.status(200).json(response);
+  } catch (err) {
+    console.error("Error getting upload stats:", err);
+    res.status(500).json({ totalUploads: 0, totalImages: 0 } as UploadStatsResponse);
+  }
+};
+
 export const handleGetMLImages: RequestHandler = async (_req, res) => {
   try {
     const uploads = await readUploads();
-    
-    // Flatten all images with their metadata
     const images: MLImageData[] = [];
-    
+
     for (const upload of uploads) {
       for (const file of upload.files) {
         images.push({
@@ -217,42 +333,28 @@ export const handleGetMLImages: RequestHandler = async (_req, res) => {
       }
     }
 
-    const response: MLImagesResponse = {
-      images,
-      total: images.length,
-    };
-
+    const response: MLImagesResponse = { images, total: images.length };
     res.status(200).json(response);
-  } catch (error) {
-    console.error("Error getting ML images:", error);
-    res.status(500).json({
-      images: [],
-      total: 0,
-    } as MLImagesResponse);
+  } catch (err) {
+    console.error("Error getting ML images:", err);
+    res.status(500).json({ images: [], total: 0 } as MLImagesResponse);
   }
 };
 
-// Get images by upload ID
 export const handleGetImagesByUploadId: RequestHandler = async (req, res) => {
   try {
     const { uploadId } = req.params;
     const uploads = await readUploads();
-    
-    const upload = uploads.find((u) => u.id === uploadId);
-    
+    const upload = uploads.find(u => u.id === uploadId);
     if (!upload) {
-      return res.status(404).json({
-        images: [],
-        total: 0,
-        message: "Upload not found",
-      });
+      return res.status(404).json({ images: [], total: 0 } as MLImagesResponse);
     }
 
-    const images: MLImageData[] = upload.files.map((file) => ({
+    const images: MLImageData[] = upload.files.map(f => ({
       uploadId: upload.id,
-      fileId: file.id,
-      absolutePath: file.absolutePath,
-      relativePath: file.path,
+      fileId: f.id,
+      absolutePath: f.absolutePath,
+      relativePath: f.path,
       metadata: {
         constructionType: upload.constructionType,
         siteLocation: upload.siteLocation,
@@ -263,43 +365,13 @@ export const handleGetImagesByUploadId: RequestHandler = async (req, res) => {
       },
     }));
 
-    const response: MLImagesResponse = {
-      images,
-      total: images.length,
-    };
-
+    const response: MLImagesResponse = { images, total: images.length };
     res.status(200).json(response);
-  } catch (error) {
-    console.error("Error getting images by upload ID:", error);
-    res.status(500).json({
-      images: [],
-      total: 0,
-    } as MLImagesResponse);
+  } catch (err) {
+    console.error("Error getting images by upload id:", err);
+    res.status(500).json({ images: [], total: 0 } as MLImagesResponse);
   }
 };
 
-// Get upload statistics
-export const handleGetUploadStats: RequestHandler = async (_req, res) => {
-  try {
-    const uploads = await readUploads();
-    
-    const totalUploads = uploads.length;
-    const totalImages = uploads.reduce((sum, upload) => sum + upload.files.length, 0);
-
-    const response: UploadStatsResponse = {
-      totalUploads,
-      totalImages,
-    };
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error("Error getting upload stats:", error);
-    res.status(500).json({
-      totalUploads: 0,
-      totalImages: 0,
-    } as UploadStatsResponse);
-  }
-};
-
-// Export multer middleware
+// Export multer
 export { upload };

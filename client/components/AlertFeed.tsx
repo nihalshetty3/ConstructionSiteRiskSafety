@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
+// import { UploadAlertFeed } from "@/components/UploadAlertFeed"; // <-- DELETE THIS LINE
 
 interface Alert {
   id: string;

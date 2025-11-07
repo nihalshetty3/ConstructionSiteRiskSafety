@@ -5,6 +5,8 @@ import { AlertFeed } from "@/components/AlertFeed";
 import { DailyViolationsChart } from "@/components/DailyViolationsChart";
 import { PPEComplianceChart } from "@/components/PPEComplianceChart";
 import MLAlertFeed from "@/components/MLAlertFeed";
+import { UploadAlertFeed } from "@/components/UploadAlertField";  
+
 
 export default function Index() {
   return (
@@ -51,7 +53,8 @@ export default function Index() {
 
           {/* Alert Feed */}
           <AlertFeed />
-
+          
+            <UploadAlertFeed />
           {/* Footer */}
           <div className="mt-12 pt-8 border-t border-white/10 text-center text-gray-500 text-sm">
             <p>SiteGuard AI • Construction Safety Intelligence • v1.0</p>

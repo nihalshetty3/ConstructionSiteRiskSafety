@@ -92,5 +92,51 @@
       }
     ],
     "createdAt": "2025-11-07T02:41:32.885Z"
+  },
+  {
+    "id": "upload-1762517694060-vnunko",
+    "constructionType": "ghj",
+    "siteLocation": "vhjb",
+    "supervisorName": "dhruva",
+    "uploadDate": "2025-11-07",
+    "notes": "",
+    "files": [
+      {
+        "id": "file-1762517694739-0",
+        "name": "image63.jpg",
+        "size": 67000,
+        "type": "image/jpeg",
+        "path": "uploads/upload-1762517694060-vnunko/image63-1762517694088-l8bpxp.jpg",
+        "absolutePath": "C:\\Users\\anvit\\Downloads\\sah\\ConstructionSiteRiskSafety\\server\\data\\uploads\\upload-1762517694060-vnunko\\image63-1762517694088-l8bpxp.jpg"
+      }
+    ],
+    "createdAt": "2025-11-07T12:14:54.739Z"
+  },
+  {
+    "id": "upload-1762518731518-cfmefw",
+    "constructionType": "bn",
+    "siteLocation": "bangalore",
+    "supervisorName": "dhurva",
+    "uploadDate": "2025-11-07",
+    "notes": "",
+    "files": [
+      {
+        "id": "file-upload-1762518731518-cfmefw-0",
+        "name": "image63.jpg",
+        "size": 67000,
+        "type": "image/jpeg",
+        "path": "uploads/upload-1762518731518-cfmefw/image63-1762518731523-j4k25x.jpg",
+        "absolutePath": "C:\\Users\\anvit\\Downloads\\sah\\ConstructionSiteRiskSafety\\server\\data\\uploads\\upload-1762518731518-cfmefw\\image63-1762518731523-j4k25x.jpg"
+      }
+    ],
+    "createdAt": "2025-11-07T12:32:14.324Z",
+    "mlResults": [
+      {
+        "time_ms": 2615,
+        "count": 0,
+        "detections": [],
+        "filename": "image63.jpg"
+      }
+    ]
   }
 ]
