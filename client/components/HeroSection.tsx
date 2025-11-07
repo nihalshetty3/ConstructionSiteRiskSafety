@@ -24,7 +24,7 @@ export function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Upload Site Data Button */}
-            <button onClick={() => navigate('/uploads')} className="relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange group overflow-hidden">
+            <button className="relative px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-neon-orange to-amber-600 hover:from-neon-orange hover:to-amber-500 transition-all duration-300 glow-strong-orange hover:glow-neon-orange group overflow-hidden">
               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="relative z-10 flex items-center gap-2">
                 <svg
@@ -42,6 +42,15 @@ export function HeroSection() {
                 </svg>
                 Upload Site Data
               </span>
+            </button>
+
+            {/* Start Live Analysis Button */}
+            <button
+              onClick={() => navigate('/camera')}
+              className="relative px-8 py-4 rounded-lg font-semibold text-white bg-gradient-to-r from-neon-cyan to-neon-green hover:from-neon-cyan hover:to-neon-green transition-all duration-300 glow-neon-cyan group overflow-hidden"
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <span className="relative z-10 flex items-center gap-2">Start Live Analysis</span>
             </button>
 
             {/* View Alerts Button */}
