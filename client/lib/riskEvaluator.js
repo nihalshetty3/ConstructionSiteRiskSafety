@@ -1,14 +1,26 @@
 // client/lib/riskEvaluator.js
-function clamp(v, a, b) { 
-  return Math.max(a, Math.min(b, v)); 
+// Simplified risk evaluator: uses only age, total_hours_worked, and health_conditions.
+// No rest/vitals logic included.
+
+function clamp(v, a, b) {
+  return Math.max(a, Math.min(b, v));
 }
 
+/**
+ * Compute health multiplier based on number of conditions and medications.
+ * Every condition adds +0.2, capped so multiplier is between 1.0 and 1.6.
+ * Medications add a small caution (+0.1).
+ * @param {string[]} conditions
+ * @param {string} medications
+ * @returns {number}
+ */
 function computeHealthMultiplier(conditions = [], medications = "") {
-  if (!conditions || conditions.length === 0 || (conditions.length === 1 && conditions[0] === 'None')) {
+  if (!conditions || conditions.length === 0 || (conditions.length === 1 && conditions[0] === "None")) {
     return 1.0;
   }
-  const count = conditions.filter(c => c !== "None").length;
-  let mult = 1.0 + (0.2 * count);
+  const conditionCount = conditions.filter(c => c !== "None").length;
+  const add = 0.2 * conditionCount;
+  let mult = 1.0 + add;
   if (medications && medications.trim().length > 0) {
     mult += 0.1;
   }
@@ -16,140 +28,93 @@ function computeHealthMultiplier(conditions = [], medications = "") {
 }
 
 /**
- * Computes a health and fatigue risk score for construction workers
- * @param {Object} input - Worker data
- * @param {string|number} input.worker_id - Worker ID
- * @param {number} input.age - Worker age
- * @param {number} input.total_hours_worked - Total hours worked
- * @param {number} [input.rest_minutes_last_24h] - Rest minutes in last 24 hours
- * @param {number} [input.rest_minutes] - Rest minutes (fallback)
- * @param {string[]} [input.health_conditions] - Array of health conditions
- * @param {string} [input.medications] - Medications list
- * @param {number} [input.heart_rate_bpm] - Heart rate in BPM
- * @param {number} [input.temperature_C] - Temperature in Celsius
- * @param {number} [input.systolic_bp] - Systolic blood pressure
- * @param {number} [input.diastolic_bp] - Diastolic blood pressure
- * @returns {Object} Risk assessment result
+ * Compute a simplified risk score and alert level for a worker.
+ * Uses age (0-30 pts), hours worked (0-40 pts), and health multiplier.
+ *
+ * @param {Object} input
+ * @param {string|number} [input.worker_id]
+ * @param {string} [input.worker_name]
+ * @param {number} input.age
+ * @param {number} input.total_hours_worked
+ * @param {string[]} [input.health_conditions]
+ * @param {string} [input.medications]
+ * @returns {Object} { worker_id, score, alert_level, reasons, recommended_actions }
  */
-function computeRiskScore(input) {
+function computeRiskScore(input = {}) {
   const age = Number(input.age || 0);
   const hours = Number(input.total_hours_worked || 0);
-  const restMinutes = Number(input.rest_minutes_last_24h ?? input.rest_minutes ?? 480);
   const conds = input.health_conditions || [];
   const meds = input.medications || "";
-  const hr = Number(input.heart_rate_bpm || 0);
-  const temp = Number(input.temperature_C || 0);
-  const sys = Number(input.systolic_bp || 0);
-  const dia = Number(input.diastolic_bp || 0);
 
-  // Age adds 0–30 points
-  // Risk increases for workers under 30 or over 70
-  const ageScore = clamp(((age - 30) / (70 - 30)) * 30, 0, 30);
+  // Age score (0 - 25)
+  // Simpler bucketing to avoid tiny decimals and be interpretable
+  let ageScore = 0;
+  if (age <= 30) ageScore = 5;
+  else if (age <= 40) ageScore = 10;
+  else if (age <= 50) ageScore = 15;
+  else if (age <= 60) ageScore = 20;
+  else ageScore = 25;
 
-  // Hours worked adds 0–30 points
-  // Risk increases for work beyond 8 hours, max risk at 12+ hours
-  const hoursScore = hours <= 8 ? 0 : clamp(((hours - 8) / (12 - 8)) * 30, 0, 30);
+  // Hours score (0 - 40)
+  // 0-8h: low; 9-10: moderate; 11-12: high; 13+: max
+  let hoursScore = 0;
+  if (hours <= 8) hoursScore = 10;
+  else if (hours <= 10) hoursScore = 20;
+  else if (hours <= 12) hoursScore = 30;
+  else hoursScore = 40;
 
-  // Rest time adds 0–20 points
-  // Less than 6 hours (360 min) = high risk, less than 8 hours (480 min) = moderate risk
-  let restScore = 0;
-  if (restMinutes < 360) {
-    restScore = 20;
-  } else if (restMinutes < 480) {
-    restScore = 10;
-  }
+  // Combine raw score
+  const raw = clamp(ageScore + hoursScore, 0, 100);
 
-  // Optional vitals 0–20 points
-  let vitalsScore = 0;
-  if (hr > 120) {
-    vitalsScore += 15;
-  } else if (hr > 100) {
-    vitalsScore += 10;
-  }
-  if (temp > 38.5) {
-    vitalsScore += 12;
-  } else if (temp > 37.5) {
-    vitalsScore += 7;
-  }
-  if (sys > 160 || dia > 100) {
-    vitalsScore += 12;
-  } else if (sys > 140 || dia > 90) {
-    vitalsScore += 8;
-  }
-  vitalsScore = clamp(vitalsScore, 0, 20);
-
-  // Compute raw risk score (0-100)
-  const raw = clamp(ageScore + hoursScore + restScore + vitalsScore, 0, 100);
-  
-  // Apply health conditions multiplier
+  // Multiplier from conditions & meds
   const mult = computeHealthMultiplier(conds, meds);
+
+  // Final score capped at 100
   const score = clamp(Math.round(raw * mult), 0, 100);
 
-  // Determine alert level
-  let level = "ok";
-  if (score <= 30) {
-    level = "ok";
-  } else if (score <= 60) {
-    level = "watch";
-  } else if (score <= 80) {
-    level = "warning";
-  } else {
-    level = "critical";
-  }
+  // Map to alert level
+  let alert_level = "ok";
+  if (score >= 80) alert_level = "critical";
+  else if (score >= 60) alert_level = "warning";
+  else if (score >= 40) alert_level = "watch";
 
-  // Generate recommended actions based on alert level
-  const actions = [];
-  if (level === "ok") {
-    actions.push("Maintain hydration and standard rest schedule.");
-  } else if (level === "watch") {
-    actions.push("Add 15-minute rest and verify hydration.");
-    actions.push("Supervisor review at shift end.");
-  } else if (level === "warning") {
-    actions.push("Immediate 30-minute rest and vitals recheck.");
-    actions.push("Supervisor to adjust next shift workload.");
-  } else {
-    actions.push("Stop work immediately and initiate medical check.");
-    actions.push("Notify supervisor and emergency contact.");
-  }
+  // Reasons (human readable)
+  const reasons = [
+    `Age (${age}) contributes ${Math.round(ageScore)} pts`,
+    `Hours worked (${hours}h) contributes ${Math.round(hoursScore)} pts`
+  ];
 
-  // Build detailed reasons array
-  const reasons = [];
-  if (ageScore > 0) {
-    reasons.push(`Age (${age} years) contributes ${Math.round(ageScore)} risk points`);
-  }
-  if (hoursScore > 0) {
-    reasons.push(`Extended work hours (${hours}h) contributes ${Math.round(hoursScore)} risk points`);
-  }
-  if (restScore > 0) {
-    reasons.push(`Insufficient rest (${restMinutes} min) contributes ${restScore} risk points`);
-  }
-  if (vitalsScore > 0) {
-    const vitalsDetails = [];
-    if (hr > 0) vitalsDetails.push(`HR: ${hr} bpm`);
-    if (temp > 0) vitalsDetails.push(`Temp: ${temp}°C`);
-    if (sys > 0 || dia > 0) vitalsDetails.push(`BP: ${sys}/${dia}`);
-    reasons.push(`Vitals ${vitalsDetails.join(", ")} contribute ${vitalsScore} risk points`);
-  }
-  
   const conditionCount = conds.filter(c => c !== "None").length;
   if (conditionCount > 0) {
-    reasons.push(`${conditionCount} health condition(s) apply ${mult.toFixed(2)}x multiplier`);
+    reasons.push(`${conditionCount} health condition(s) apply multiplier x${mult.toFixed(2)}`);
   } else {
-    reasons.push("No health conditions - 1.0x multiplier");
+    reasons.push("No health conditions - multiplier x1.00");
   }
-  
+
   if (meds && meds.trim().length > 0) {
-    reasons.push("Medications present - additional 0.1x multiplier applied");
+    reasons.push("Medications present - added caution");
+  }
+
+  // Recommended actions based on alert level
+  let recommended_actions = [];
+  if (alert_level === "ok") {
+    recommended_actions = ["Maintain hydration and standard rest schedule."];
+  } else if (alert_level === "watch") {
+    recommended_actions = ["Add a short 15-minute rest and verify hydration.", "Supervisor: brief check-in at shift end."];
+  } else if (alert_level === "warning") {
+    recommended_actions = ["Require 30-minute rest and reduced physical tasks.", "Supervisor to adjust next shift workload."];
+  } else {
+    recommended_actions = ["Stop work immediately and initiate medical check.", "Notify supervisor and emergency contact."];
   }
 
   return {
     worker_id: input.worker_id || null,
+    worker_name: input.worker_name || null,
     score,
-    alert_level: level,
+    alert_level,
     reasons,
-    recommended_actions: actions
+    recommended_actions
   };
 }
 
 export { computeRiskScore };
-

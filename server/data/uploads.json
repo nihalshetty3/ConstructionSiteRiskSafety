@@ -92,5 +92,24 @@
       }
     ],
     "createdAt": "2025-11-07T02:41:32.885Z"
+  },
+  {
+    "id": "upload-1762514875485-0hur7k",
+    "constructionType": "industrial",
+    "siteLocation": "Tamil Nadu",
+    "supervisorName": "Dhruva",
+    "uploadDate": "2025-11-07",
+    "notes": "",
+    "files": [
+      {
+        "id": "file-1762514875496-0",
+        "name": "WhatsApp Image 2025-11-07 at 03.00.03.jpeg",
+        "size": 50184,
+        "type": "image/jpeg",
+        "path": "uploads/upload-1762514875485-0hur7k/WhatsApp_Image_2025-11-07_at_03_00_03-1762514875486-pwwzl.jpeg",
+        "absolutePath": "/Users/dhruvashedbalkar/Desktop/Sahyadri/ConstructionSiteRiskSafety/server/data/uploads/upload-1762514875485-0hur7k/WhatsApp_Image_2025-11-07_at_03_00_03-1762514875486-pwwzl.jpeg"
+      }
+    ],
+    "createdAt": "2025-11-07T11:27:55.496Z"
   }
 ]

@@ -21,10 +21,7 @@ const navItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={24} />, path: "/" },
   { id: "alerts", label: "Alerts", icon: <AlertCircle size={24} />, path: "/alerts" },
   { id: "uploads", label: "Uploads", icon: <Upload size={24} />, path: "/uploads" },
-  { id: "workers", label: "Workers", icon: <Users size={24} />, path: "/workers" },
-  { id: "analytics", label: "Analytics", icon: <BarChart3 size={24} />, path: "/analytics" },
-  { id: "reports", label: "Reports", icon: <FileText size={24} />, path: "/reports" },
-  { id: "settings", label: "Settings", icon: <Settings size={24} />, path: "/settings" },
+  { id: "workers", label: "Workers", icon: <Users size={24} />, path: "/workers" }
 ];
 
 export function Sidebar() {
