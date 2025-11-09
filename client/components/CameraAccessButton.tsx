@@ -55,7 +55,7 @@ export default function CameraAccessButton(): JSX.Element {
           </button>
 
           <button onClick={closeCamera} className="px-4 py-2 rounded bg-red-600 text-white">
-            Close Camera
+            Close the Camera
           </button>
         </div>
 
